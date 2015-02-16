@@ -1,7 +1,8 @@
 {
     "description": "Nginx Plugin written in LUA",
     "icon" : "icon.png",
-    "command": "boundary-meter index.lua",
+    "command": "node index.js",
+    “command_lua” : “boundary-meter index.lua”,
     "metrics" : ["NGINX_ACTIVE_CONNECTIONS",
                 "NGINX_READING",
                 "NGINX_WRITING",

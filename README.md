@@ -93,9 +93,7 @@ To collect statistics from nginx, it needs to built with the [nginx HttpStubStat
 
 |Field Name|Description                                                |
 |:---------|:----------------------------------------------------------|
-|Port      |The NGINX port.                                        |
-|Host      |The NGINX hostname.                                    |
-|Path      |The status path.                                    |
+|URL      |The NGINX URL.                                        |
 
 ### Metrics Collected
 |Metric Name          |Description                       |

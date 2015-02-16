@@ -3,23 +3,24 @@ local timer    = require('timer')
 local http     = require('http')
 local boundary = require('boundary')
 local io       = require('io')
+local _url     = require('_url')
 
-local __pgk     = "BOUNDARY NGINX"
-local _previous = {}
-local poll      = 1000
-local host      = "localhost"
-local port      = 80
-local path      = "/nginx_status"
-local source
-
+local __pgk        = "BOUNDARY NGINX"
+local _previous    = {}
+local url          = "http://127.0.0.1/nginx_status"
+local pollInterval = 1000
+local port         = 80
+local source, host, port, path
 
 if (boundary.param ~= nil) then
-  poll = boundary.param.poll or poll
-  host = boundary.param.host or host
-  port = boundary.param.port or port
-  path = boundary.param.path or path
-  source = (type(boundary.param.source) == 'string' and boundary.param.source:gsub('%s+', '') ~= '' and boundary.param.source) or
+  pollInterval = boundary.param.pollInterval or pollInterval
+  url          = boundary.param.url or url
+  source       = (type(boundary.param.source) == 'string' and boundary.param.source:gsub('%s+', '') ~= '' and boundary.param.source) or
    io.popen("uname -n"):read('*line')
+  local u = _url.parse(url)
+  host = u.host
+  port = u.port
+  path = u.path
 end
 
 function berror(err)
@@ -170,7 +171,7 @@ end
 
 print("_bevent:NGINX plugin up : version 1.0|t:info|tags:nginx,lua, plugin")
 
-timer.setInterval(poll, function ()
+timer.setInterval(pollInterval, function ()
 
   doreq(host, port, path, function(err, body)
       if berror(err) then return end
