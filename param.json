@@ -1,0 +1,6 @@
+{
+	"poll": 1000,
+  "host": "localhost",
+	"path": "/nginx_status",
+	"port": 80
+}

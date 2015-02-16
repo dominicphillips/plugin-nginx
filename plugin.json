@@ -1,0 +1,39 @@
+{
+    "description": "Nginx Plugin written in LUA",
+    "icon" : "icon.png",
+    "command": "boundary-meter index.lua",
+    "metrics" : ["NGINX_ACTIVE_CONNECTIONS",
+                "NGINX_READING",
+                "NGINX_WRITING",
+                "NGINX_WAITING",
+                "NGINX_HANDLED",
+                "NGINX_NOT_HANDLED",
+                "NGINX_REQUESTS",
+                "NGINX_REQUESTS_PER_CONNECTION"
+    ],
+    "postExtract" : "",
+    "paramSchema": [
+        {
+            "title": "HOST",
+            "name": "host",
+            "description": "The Nginx hostname",
+            "type": "string",
+            "default": "localhost",
+        },
+        {
+            "title" : "Port",
+            "name" : "port",
+            "description" : "The Nginx port",
+            "type" : "integer",
+            "default" : 80
+        },
+        {
+            "title" : "Path",
+            "name" : "path",
+            "description" : "The Nginx path",
+            "type" : "string",
+            "default" : "/nginx_status"
+        },
+
+    ]
+}
