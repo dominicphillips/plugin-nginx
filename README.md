@@ -1,4 +1,4 @@
-Boundary Elasticsearch Plugin
+Boundary Nginx Plugin
 -------------------------
 
 Collects metrics from a nginx instance.
