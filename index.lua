@@ -2,19 +2,24 @@ local JSON     = require('json')
 local timer    = require('timer')
 local http     = require('http')
 local boundary = require('boundary')
+local io       = require('io')
 
-local __pgk = "BOUNDARY NGINX"
+local __pgk     = "BOUNDARY NGINX"
 local _previous = {}
-local poll = 1000
-local host = "localhost"
-local port = 80
-local path = "/nginx_status"
+local poll      = 1000
+local host      = "localhost"
+local port      = 80
+local path      = "/nginx_status"
+local source
+
 
 if (boundary.param ~= nil) then
-  poll = boundary.param['poll'] or poll
-  host = boundary.param['host'] or host
-  port = boundary.param['port'] or port
-  path = boundary.param['path'] or path
+  poll = boundary.param.poll or poll
+  host = boundary.param.host or host
+  port = boundary.param.port or port
+  path = boundary.param.path or path
+  source = (type(boundary.param.source) == 'string' and boundary.param.source:gsub('%s+', '') ~= '' and boundary.param.source) or
+   io.popen("uname -n"):read('*line')
 end
 
 function berror(err)
@@ -98,6 +103,50 @@ function parseStatsText(body)
     return stats
 end
 
+-- accumulate a value and return the difference from the previous value
+function accumulate(key, newValue)
+    local oldValue = _previous[key] or newValue
+    local difference = diff(newValue, oldValue)
+    _previous[key] = newValue
+    return difference
+end
+
+-- get the natural difference between a and b
+function diff(a, b)
+  if not a or not b then return 0 end
+  return math.max(a - b, 0)
+end
+
+
+function parseStatsJson(body)
+    j = nil
+    pcall(function () j = json.parse(body) end)
+end
+
+
+function printEnterpriseStats(stats)
+    local handled               = stats['connections']['accepted'] - stats['connections']['dropped']
+    local requests              = stats['requests']['total']
+    local requestsPerConnection = (requests > 0 and handled) and requests / handled or 0
+
+    print(string.format('NGINX_ACTIVE_CONNECTIONS %d %s', stats['connections']['active'] + stats['connections']['idle'], source))
+    print(string.format('NGINX_WAITING %d %s', stats['connections']['idle'], source))
+    print(string.format('NGINX_HANDLED %d %s', accumulate('NGINX_HANDLED', handled), source))
+    print(string.format('NGINX_NOT_HANDLED %d %s', stats['connections']['dropped'], source))
+    print(string.format('NGINX_REQUESTS %d %s', accumulate('NGINX_REQUESTS', requests), source))
+    print(string.format('NGINX_REQUESTS_PER_CONNECTION %d %s', requestsPerConnection, source))
+
+    -- enterprise customers have 'per zone' statistics
+    for i, zone_name in ipairs(stats.server_zones) do
+        local zone = stats.server_zones[zone_name]
+        local src = source .. zone_name
+        print(string.format('NGINX_REQUESTS %d %s', accumulate('NGINX_REQUESTS_' .. zone_name, zone['requests']), src))
+        print(string.format('NGINX_RESPONSES %d %s', accumulate('NGINX_RESPONSES_' .. zone_name, zone['responses']['total']), src))
+        print(string.format('NGINX_TRAFFIC_SENT %d %s', accumulate('NGINX_TRAFFIC_SENT_' .. zone_name, zone['sent']), src))
+        print(string.format('NGINX_TRAFFIC_RECEIVED %d %s', accumulate('NGINX_TRAFFIC_RECEIVED_' .. zone_name, zone['received']), src))
+    end
+
+end
 
 function printStats(stats)
     local handled               = _previous['handled'] and diff(stats.handled, _previous.handled) or 0
@@ -106,27 +155,32 @@ function printStats(stats)
 
     _previous = stats
 
-    print(string.format('NGINX_ACTIVE_CONNECTIONS %d', stats.connections))
-    print(string.format('NGINX_READING %d', stats.reading))
-    print(string.format('NGINX_WRITING %d', stats.writing))
-    print(string.format('NGINX_WAITING %d', stats.waiting))
-    print(string.format('NGINX_HANDLED %d', handled))
-    print(string.format('NGINX_NOT_HANDLED %d', stats.nothandled))
-    print(string.format('NGINX_REQUESTS %d', requests))
-    print(string.format('NGINX_REQUESTS_PER_CONNECTION %d', requestsPerConnection))
+    print(string.format('NGINX_ACTIVE_CONNECTIONS %d %s', stats.connections, source))
+    print(string.format('NGINX_READING %d %s', stats.reading, source))
+    print(string.format('NGINX_WRITING %d %s', stats.writing, source))
+    print(string.format('NGINX_WAITING %d %s', stats.waiting, source))
+    print(string.format('NGINX_HANDLED %d %s', handled, source))
+    print(string.format('NGINX_NOT_HANDLED %d %s', stats.nothandled, source))
+    print(string.format('NGINX_REQUESTS %d %s', requests, source))
+    print(string.format('NGINX_REQUESTS_PER_CONNECTION %d %s', requestsPerConnection, source))
 
 end
 
 
 
-print("_bevent:NGINX plugin up : version 1.0|t:info|tags:nginx,lua,plugin")
+print("_bevent:NGINX plugin up : version 1.0|t:info|tags:nginx,lua, plugin")
 
 timer.setInterval(poll, function ()
 
   doreq(host, port, path, function(err, body)
       if berror(err) then return end
-      stats = parseStatsText(body)
-      printStats(stats)
+      local stats = parseStatsJson(body)
+      if stats then printEnterpriseStats(stats)
+      else
+        stats = parseStatsText(body)
+        printStats(stats)
+      end
+
   end)
 
 end)
