@@ -1,5 +1,5 @@
 {
-    "description": "Nginx Plugin written in LUA",
+    "description": "Boundary Nginx Plugin",
     "icon" : "icon.png",
     "command": "node index.js",
     “command_lua” : “boundary-meter index.lua”,
@@ -15,25 +15,11 @@
     "postExtract" : "",
     "paramSchema": [
         {
-            "title": "HOST",
-            "name": "host",
-            "description": "The Nginx hostname",
+            "title": "URL",
+            "name": "url",
+            "description": "The Nginx url",
             "type": "string",
             "default": "localhost",
-        },
-        {
-            "title" : "Port",
-            "name" : "port",
-            "description" : "The Nginx port",
-            "type" : "integer",
-            "default" : 80
-        },
-        {
-            "title" : "Path",
-            "name" : "path",
-            "description" : "The Nginx path",
-            "type" : "string",
-            "default" : "/nginx_status"
         },
 
     ]
