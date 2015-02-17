@@ -1,47 +1,60 @@
 local JSON     = require('json')
 local timer    = require('timer')
 local http     = require('http')
+local https    = require('https')
 local boundary = require('boundary')
 local io       = require('io')
 local _url     = require('_url')
+local base64   = require('luvit-base64')
+
 
 local __pgk        = "BOUNDARY NGINX"
 local _previous    = {}
 local url          = "http://127.0.0.1/nginx_status"
 local pollInterval = 1000
-local port         = 80
-local source, host, port, path
+local strictSSL    = true
+local source, username, password
+
 
 if (boundary.param ~= nil) then
-  pollInterval = boundary.param.pollInterval or pollInterval
-  url          = boundary.param.url or url
-  source       = (type(boundary.param.source) == 'string' and boundary.param.source:gsub('%s+', '') ~= '' and boundary.param.source) or
+  pollInterval       = boundary.param.pollInterval or pollInterval
+  url                = boundary.param.url or url
+  username           = boundary.param.username
+  password           = boundary.param.password
+  strictSSL          = boundary.param.strictSSL == true
+  source             = (type(boundary.param.source) == 'string' and boundary.param.source:gsub('%s+', '') ~= '' and boundary.param.source) or
    io.popen("uname -n"):read('*line')
-  local u = _url.parse(url)
-  host = u.host
-  port = u.port
-  path = u.path
 end
+
 
 function berror(err)
   if err then print(string.format("%s ERROR: %s", __pgk, tostring(err))) return err end
 end
 
---- do a http request
-local doreq = function(host, port, path, cb)
+--- do a http(s) request
+local doreq = function(url, cb)
+    local u = _url.parse(url)
+    u.protocol = u.scheme
+    -- reject self signed certs
+    u.rejectUnauthorized = strictSSL
+    if user and password then
+      u.headers = {Authorization = "Basic " .. (base64.encode(user..":"..password))}
+    end
     local output = ""
-    local req = http.request({host = host, port = port, path = path}, function (res)
+    local onSuccess = function(res)
       res:on("error", function(err)
         cb("Error while receiving a response: " .. tostring(err), nil)
       end)
       res:on("data", function (chunk)
         output = output .. chunk
       end)
-      res:on("end", function ()
+      res:on("end", function()
+        if res.statusCode == 401 then return cb("Authentication required, provide user and password", nil) end
         res:destroy()
         cb(nil, output)
       end)
-    end)
+    end
+    local req = (u.scheme == "https") and https.request(u, onSuccess) or http.request(u, onSuccess)
     req:on("error", function(err)
       cb("Error while sending a request: " .. tostring(err), nil)
     end)
@@ -122,6 +135,7 @@ end
 function parseStatsJson(body)
     j = nil
     pcall(function () j = json.parse(body) end)
+    return j
 end
 
 
@@ -173,7 +187,7 @@ print("_bevent:NGINX plugin up : version 1.0|t:info|tags:nginx,lua, plugin")
 
 timer.setInterval(pollInterval, function ()
 
-  doreq(host, port, path, function(err, body)
+  doreq(url, function(err, body)
       if berror(err) then return end
       local stats = parseStatsJson(body)
       if stats then printEnterpriseStats(stats)

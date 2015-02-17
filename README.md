@@ -94,6 +94,9 @@ To collect statistics from nginx, it needs to built with the [nginx HttpStubStat
 |Field Name|Description                                                |
 |:---------|:----------------------------------------------------------|
 |URL      |The NGINX URL.                                        |
+|Strict SSL    |Use Strict SSL checking when HTTPS is enabled, enabled by default                                     |
+|Username      |If the endpoint is password protected, what username should boundary use when calling it.             |
+|Password      |If the endpoint is password protected, what password should boundary use when calling it.
 
 ### Metrics Collected
 |Metric Name          |Description                       |

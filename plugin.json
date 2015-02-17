@@ -13,14 +13,38 @@
                 "NGINX_REQUESTS_PER_CONNECTION"
     ],
     "postExtract" : "",
-    "paramSchema": [
-        {
-            "title": "URL",
-            "name": "url",
-            "description": "The Nginx url",
-            "type": "string",
-            "default": "localhost",
-        },
-
-    ]
-}
+    "paramSchema" : [
+          {
+              "title" : "Source",
+              "name" : "source",
+              "description" : "The Source to display in the legend for the nginx data.  It will default to the hostname of the server",
+              "type" : "string"
+          },
+          {
+              "title" : "Statistics URL",
+              "name" : "url",
+              "description" : "The URL endpoint of where the nginx statistics are hosted.",
+              "type" : "string",
+              "default" : "http://127.0.0.1/nginx_status"
+          },
+          {
+              "title" : "Strict SSL",
+              "name" : "strictSSL",
+              "description" : "Enforce Strict SSL checking",
+              "type" : "boolean",
+              "default": true
+          },
+          {
+              "title" : "Username",
+              "name" : "username",
+              "description" : "If the endpoint is password protected, what username should graphdat use when calling it.",
+              "type" : "string"
+          },
+          {
+              "title" : "Password",
+              "name" : "password",
+              "description" : "If the endpoint is password protected, what password should graphdat use when calling it.",
+              "type" : "password"
+          }
+      ]
+  }
