@@ -37,8 +37,8 @@ local doreq = function(url, cb)
     u.protocol = u.scheme
     -- reject self signed certs
     u.rejectUnauthorized = strictSSL
-    if user and password then
-      u.headers = {Authorization = "Basic " .. (base64.encode(user..":"..password))}
+    if username and password then
+      u.headers = {Authorization = "Basic " .. (base64.encode(username..":"..password))}
     end
     local output = ""
     local onSuccess = function(res)
