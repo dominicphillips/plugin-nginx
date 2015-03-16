@@ -4,11 +4,7 @@
   "private": false,
   "description": "Nginx plugin for Graphat",
   "main": "index.js",
-  "devDependencies": {
-    "luvit-base64": "^0.1.1"
-  },
   "dependencies": {
-    "luvit-base64": "^0.1.1",
     "graphdat-plugin-tools": "0.0.1",
     "request": "2.27.x"
   },
